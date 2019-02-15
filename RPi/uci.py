@@ -1,10 +1,10 @@
 import os
 import re
 
-class uci_command:
-    def __init__(self):
-        self.__config = None
-        self.__type = None
+class _uci_command:
+    def __init__(self, _config, _type):
+        self.__config = _config
+        self.__type = _type
 
     def create(self, name, **args):
         os.popen('uci set ' + self.__config + '.' + name + '=' + self.__type)
@@ -44,49 +44,45 @@ class uci_command:
         os.popen('wifi')
 
     def remove(self, args):
-        length = None
-
         if type(args) is str:
-            length = 1
             args = [args]
         elif type(args) is list or type(args) is tuple:
-            length = len(args)
+            pass
         else:
             raise TypeError('args deve ser str, list ou tuple')
         
-        for i in range(length):
-            os.popen('uci delete ' + self.__config + '.' + args[i])
+        for arg in args:
+            os.popen('uci delete ' + self.__config + '.' + arg)
         
         os.popen('uci commit ' + self.__config)
         os.popen('wifi')
 
     def remove_all(self):
-        ls = self.read_all()
-        ls.remove('radio0')  # Don't remove radio0 !
-        for i in ls:
-            self.remove(i)
+        all_elements = self.read_all()
 
-class Wireless(uci_command):
+        for element in all_elements:
+            if 'radio' in element:
+                all_elements.remove(element)  # Don't remove radios!
+                
+        self.remove(all_elements)
+
+class __wireless(_uci_command):
     def __init__(self):
-        super().__init__()
-        self.__config = 'wireless'
-        self.__type = 'wifi-iface'
+        super().__init__('wireless', 'wifi-iface')  
 
-class Network(uci_command):
+class __network(_uci_command):
     def __init__(self):
-        super().__init__()
-        self.__config = 'network'
-        self.__type = 'interface'
+        super().__init__('network', 'interface')
 
-class Firewall(uci_command):
-    def __init__(self, _type):
+class __firewall():
+    def __init__(self):
         '''Type can: dafaults, zone, rule, forwarding'''
-        super().__init__()
-        self.__config = 'firewall'
-        self.__type = _type
+        self.defaults = _uci_command('firewall', 'defaults')
+        self.zone = _uci_command('firewall', 'zone')
+        self.rule = _uci_command('firewall', 'rule')
+        self.forwarding = _uci_command('firewall', 'forwarding')
 
-class Dhcp(uci_command):
+class __dhcp(_uci_command):
     def __init__(self):
-        super().__init__()
-        self.__config = 'dhcp'
-        self.__type = 'dhcp'
+        super().__init__('dhcp', 'dhcp')
+
