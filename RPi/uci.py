@@ -86,3 +86,8 @@ class __dhcp(_uci_command):
     def __init__(self):
         super().__init__('dhcp', 'dhcp')
 
+
+wireless = __wireless()
+network = __network()
+firewall = __firewall()
+dhcp = __dhcp()
