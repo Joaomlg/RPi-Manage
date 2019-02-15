@@ -1,4 +1,4 @@
-import uci
+import RPi.uci as uci
 import os
 import re
 
@@ -63,13 +63,17 @@ class Network:
             print(e)
         return mode if len(mode) else None
     
+    def update(self):
+        self.__interface = self.__set_interface()
+        self.__mode = self.__set_mode()
+    
     def access_point(self, name, radio, network='wlan', encryption='none'):
         '''Function to create and start an access point'''
 
         # Creating network if not exist
         if 'wlan' not in uci.network.read_all():
-            uci.network.create('wlan', ifname='wlan0', ipaddr='192.168.22.1', netmask='255.255.255.0', proto='static', type='bridge')
-        
+            uci.network.create('wlan', ifname='wlan0', proto='static', ipaddr='192.168.22.1', netmask='255.255.255.0', type='bridge')
+
         # Setting dhcp for network if not exist
         if 'wlan' not in uci.dhcp.read_all():
             uci.dhcp.create('wlan', interface='wlan', leasetime='12h', limit='150', start='100')
@@ -88,7 +92,7 @@ class Network:
             info = uci.wireless.read(wireless)
             if 'device' in info and info['device'] == radio:
                 uci.wireless.remove(wireless)
-        
+
         # Create AccessPoint
         uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
 
@@ -98,7 +102,7 @@ class Network:
             return True
         return False
 
-    def wireless_connection(self, interface, timeout=None):
+    def wireless_connection(self, interface):
         '''Function to check wireless connection'''
 
         command = 'cat /sys/class/net/%s/operstate' % interface
