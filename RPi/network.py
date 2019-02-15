@@ -63,7 +63,9 @@ class Network:
             print(e)
         return mode if len(mode) else None
     
-    def startAccessPoint(self, name, radio, network='wlan', encryption='none'):
+    def access_point(self, name, radio, network='wlan', encryption='none'):
+        '''Function to create and start an access point'''
+
         # Creating network if not exist
         if 'wlan' not in uci.network.read_all():
             uci.network.create('wlan', ifname='wlan0', ipaddr='192.168.22.1', netmask='255.255.255.0', proto='static', type='bridge')
@@ -90,8 +92,29 @@ class Network:
         # Create AccessPoint
         uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
 
+    def __check_interface(self, interface):
+        self.__interface = self.__set_interface()
+        if interface in self.__interface:
+            return True
+        return False
+
+    def wireless_connection(self, interface, timeout=None):
+        '''Function to check wireless connection'''
+
+        command = 'cat /sys/class/net/%s/operstate' % interface
+        response = os.popen(command).read()
+
+        if 'up' in response:
+            return True
+        return False
+    
+    def internet_connection(self, interface):
+        pass
+
+# Testes
 if __name__ == '__main__':
     n = Network()
     print(n.system)
     print(n.interface)
     print(n.mode)
+    print(n.wireless_connection('wlp6s0'))
