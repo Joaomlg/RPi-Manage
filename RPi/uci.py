@@ -1,14 +1,16 @@
 import os
 import re
 
+__all__ = ['wireless', 'network', 'dhcp', 'firewall']
+
 class _uci_command:
     def __init__(self, _config, _type):
-        self.__config = _config
-        self.__type = _type
+        self.__config = str(_config)
+        self.__type = str(_type)
 
-    def create(self, name, **args):
+    def create(self, name, **kwargs):
         os.popen('uci set ' + self.__config + '.' + name + '=' + self.__type)
-        for key, arg in args.items():
+        for key, arg in kwargs.items():
             if ' ' in arg:
                 arg = '"%s"' % (arg)
             os.popen('uci set ' + self.__config + '.' + name  + '.' + key + '=' + arg)
@@ -16,6 +18,7 @@ class _uci_command:
         os.popen('wifi')
 
     def read_all(self):
+        '''Read all elements of this configuration, and return their names.'''
         ls = []
         resp = os.popen('uci show ' + self.__config).read().split('\n')
         for line in resp:
@@ -26,6 +29,7 @@ class _uci_command:
         return ls
 
     def read(self, name):
+        '''Funcion to read specifications of one element.'''
         dic = {}
         resp = os.popen('uci show ' + self.__config).read().split('\n')
         for line in resp:
@@ -35,8 +39,8 @@ class _uci_command:
                     dic[regex.group(2)] = regex.group(3).replace('\'', '')
         return dic
 
-    def update(self, name, **args):
-        for key, arg in args.items():
+    def update(self, name, **kwargs):
+        for key, arg in kwargs.items():
             if ' ' in arg:
                 arg = '"%s"' % (arg)
             os.popen('uci set ' + self.__config + '.' + name  + '.' + key + '=' + arg)
@@ -44,6 +48,7 @@ class _uci_command:
         os.popen('wifi')
 
     def remove(self, args):
+        '''Function to remove configurations. Can pass one or a list of elements.'''
         if type(args) is str:
             args = [args]
         elif type(args) is list or type(args) is tuple:
@@ -58,6 +63,7 @@ class _uci_command:
         os.popen('wifi')
 
     def remove_all(self):
+        '''Remove all elements of this configuration.'''
         all_elements = self.read_all()
 
         for element in all_elements:
