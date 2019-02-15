@@ -1,80 +1,10 @@
-import os
-import re
+from RPi.uci.base_crud_command import uci_base_command
 
-__all__ = ['wireless', 'network', 'dhcp', 'firewall']
+__all__ = ['__wireless', '__network', '__firewall', '__dhcp']
 
-class _uci_command:
-    def __init__(self, _config, _type):
-        self.__config = str(_config)
-        self.__type = str(_type)
-
-    def create(self, name, **kwargs):
-        os.popen('uci set ' + self.__config + '.' + name + '=' + self.__type)
-        for key, arg in kwargs.items():
-            if ' ' in arg:
-                arg = '"%s"' % (arg)
-            os.popen('uci set ' + self.__config + '.' + name  + '.' + key + '=' + arg)
-        os.popen('uci commit ' + self.__config)
-        os.popen('wifi')
-
-    def read_all(self):
-        '''Read all elements of this configuration, and return their names.'''
-        ls = []
-        resp = os.popen('uci show ' + self.__config).read().split('\n')
-        for line in resp:
-            regex = re.match(self.__config + r'\.([^\.=]*)', line)
-            if regex is not None:
-                if regex.group(1) not in ls:
-                    ls.append(regex.group(1))
-        return ls
-
-    def read(self, name):
-        '''Funcion to read specifications of one element.'''
-        dic = {}
-        resp = os.popen('uci show ' + self.__config).read().split('\n')
-        for line in resp:
-            regex = re.match(self.__config + r'\.([^\.=]*)\.([^\.=]*)=([^\0]*)', line)
-            if regex is not None:
-                if regex.group(1) == name:
-                    dic[regex.group(2)] = regex.group(3).replace('\'', '')
-        return dic
-
-    def update(self, name, **kwargs):
-        for key, arg in kwargs.items():
-            if ' ' in arg:
-                arg = '"%s"' % (arg)
-            os.popen('uci set ' + self.__config + '.' + name  + '.' + key + '=' + arg)
-        os.popen('uci commit ' + self.__config)
-        os.popen('wifi')
-
-    def remove(self, args):
-        '''Function to remove configurations. Can pass one or a list of elements.'''
-        if type(args) is str:
-            args = [args]
-        elif type(args) is list or type(args) is tuple:
-            pass
-        else:
-            raise TypeError('args deve ser str, list ou tuple')
-        
-        for arg in args:
-            os.popen('uci delete ' + self.__config + '.' + arg)
-        
-        os.popen('uci commit ' + self.__config)
-        os.popen('wifi')
-
-    def remove_all(self):
-        '''Remove all elements of this configuration.'''
-        all_elements = self.read_all()
-
-        for element in all_elements:
-            if 'radio' in element:
-                all_elements.remove(element)  # Don't remove radios!
-                
-        self.remove(all_elements)
-
-class __wireless(_uci_command):
+class __wireless(uci_base_command):
     def __init__(self):
-        super().__init__('wireless', 'wifi-iface')  
+        super().__init__('wireless', 'wifi-iface')
 
     def create(self, name, **kwargs):
         '''kwargs can be:\n\ndevice, mode, disabled, ssid, bssid, hidden, isolate, wmm, network, encryption, key, maclist, iapp_interface, rsn_preauth, maxassoc, macaddr, wds.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/wireless'''
@@ -84,16 +14,17 @@ class __wireless(_uci_command):
         '''kwargs can be:\n\ndevice, mode, disabled, ssid, bssid, hidden, isolate, wmm, network, encryption, key, maclist, iapp_interface, rsn_preauth, maxassoc, macaddr, wds.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/wireless'''
         super().update(name, **kwargs)
 
-class __network():
+class __network(uci_base_command):
     def __init__(self):
+        super().__init__('network', 'interface')
         self.static = self.__static()
         self.dhcp = self.__dhcp()
         self.dongle3g = self.__3g()
     
-    class __static(_uci_command):
+    class __static(uci_base_command):
         def __init__(self):
             super().__init__('network', 'interface')
-        
+
         def create(self, name, **kwargs):
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'static\':\n\n ipaddr, netmask, gateway, broadcast, ap6addr, ip6ifaceid, ip6gw, ip6assign, ip6hint, ip6prefix, ip6class, dns, dns_search, metric.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().create(name, proto='static', **kwargs)
@@ -102,7 +33,7 @@ class __network():
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'static\':\n\n ipaddr, netmask, gateway, broadcast, ap6addr, ip6ifaceid, ip6gw, ip6assign, ip6hint, ip6prefix, ip6class, dns, dns_search, metric.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().update(name, proto='static', **kwargs)
 
-    class __dhcp(_uci_command):
+    class __dhcp(uci_base_command):
         def __init__(self):
             super().__init__('network', 'interface')
         
@@ -114,10 +45,10 @@ class __network():
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'dhcp\':\n\n broadcast, ipaddr, hostname, clientid,, vendorid,dns, peerdns, defaultroute, customroutes, metric, classlessroute, reqopts, sendopts, zone, iface6rd, mtu6rd, zone6rd.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().update(name, proto='dhcp', **kwargs)
     
-    class __3g(_uci_command):
-    def __init__(self):
-        super().__init__('network', 'interface')
-
+    class __3g(uci_base_command):
+        def __init__(self):
+            super().__init__('network', 'interface')
+        
         def create(self, name, **kwargs):
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'3g\':\n\n device, service, apn, pincode, dialnumber, maxwait, username, password, keepalive, demand defaultroute, peerdns, dns, ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().create(name, proto='3g', **kwargs)
@@ -126,19 +57,42 @@ class __network():
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'3g\':\n\n device, service, apn, pincode, dialnumber, maxwait, username, password, keepalive, demand defaultroute, peerdns, dns, ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().update(name, proto='3g', **kwargs)
 
-class __firewall():
+class __firewall(uci_base_command):
     def __init__(self):
-        '''Type can: dafaults, zone, rule, forwarding'''
-        self.defaults = _uci_command('firewall', 'defaults')
-        self.zone = _uci_command('firewall', 'zone')
-        self.rule = _uci_command('firewall', 'rule')
-        self.forwarding = _uci_command('firewall', 'forwarding')
+        super().__init__('firewall', 'forwarding')
+        self.defaults = self.__defaults()
+        self.zone = self.__zone()
+        self.rule = self.__rule()
+        self.forwarding = self.__forwarding()
+    
+    class __defaults(uci_base_command):
+        def __init__(self):
+            super().__init__('firewall', 'defaults')
 
+        def create(self, name, **kwargs):
+            '''kwargs can be:\n\n input, output, forward, drop_invalid, syn_flood, synflood_protect, synflood_rate, synflood_burst, tcp_syncookies, tcp_ecn, tcp_westwood, tcp_window_scaling, accept_redirects, accept_source_route, custom_chains, disable_ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().create(name, **kwargs)
 
-class __dhcp(_uci_command):
+        def update(self, name, **kwargs):
+            '''kwargs can be:\n\n input, output, forward, drop_invalid, syn_flood, synflood_protect, synflood_rate, synflood_burst, tcp_syncookies, tcp_ecn, tcp_westwood, tcp_window_scaling, accept_redirects, accept_source_route, custom_chains, disable_ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().update(name, **kwargs)
+    
+    class __zone(uci_base_command):
+        def __init__(self):
+            super().__init__('firewall', 'zone')
+
+    class __rule(uci_base_command):
+        def __init__(self):
+            super().__init__('firewall', 'zone')
+    
+    class __forwarding(uci_base_command):
+        def __init__(self):
+            super().__init__('firewall', 'forwarding')
+
+class __dhcp(uci_base_command):
     def __init__(self):
         super().__init__('dhcp', 'dhcp')
-
+    
     def create(self, name, **kwargs):
         ''''''
         super().create(name, **kwargs)
@@ -146,8 +100,3 @@ class __dhcp(_uci_command):
     def update(self, name, **kwargs):
         ''''''
         super().update(name, **kwargs)
-
-wireless = __wireless()
-network = __network()
-firewall = __firewall()
-dhcp = __dhcp()
