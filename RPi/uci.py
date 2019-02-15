@@ -76,9 +76,55 @@ class __wireless(_uci_command):
     def __init__(self):
         super().__init__('wireless', 'wifi-iface')  
 
-class __network(_uci_command):
+    def create(self, name, **kwargs):
+        '''kwargs can be:\n\ndevice, mode, disabled, ssid, bssid, hidden, isolate, wmm, network, encryption, key, maclist, iapp_interface, rsn_preauth, maxassoc, macaddr, wds.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/wireless'''
+        super().create(name, **kwargs)
+
+    def update(self, name, **kwargs):
+        '''kwargs can be:\n\ndevice, mode, disabled, ssid, bssid, hidden, isolate, wmm, network, encryption, key, maclist, iapp_interface, rsn_preauth, maxassoc, macaddr, wds.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/wireless'''
+        super().update(name, **kwargs)
+
+class __network():
+    def __init__(self):
+        self.static = self.__static()
+        self.dhcp = self.__dhcp()
+        self.dongle3g = self.__3g()
+    
+    class __static(_uci_command):
+        def __init__(self):
+            super().__init__('network', 'interface')
+        
+        def create(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'static\':\n\n ipaddr, netmask, gateway, broadcast, ap6addr, ip6ifaceid, ip6gw, ip6assign, ip6hint, ip6prefix, ip6class, dns, dns_search, metric.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().create(name, proto='static', **kwargs)
+
+        def update(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'static\':\n\n ipaddr, netmask, gateway, broadcast, ap6addr, ip6ifaceid, ip6gw, ip6assign, ip6hint, ip6prefix, ip6class, dns, dns_search, metric.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().update(name, proto='static', **kwargs)
+
+    class __dhcp(_uci_command):
+        def __init__(self):
+            super().__init__('network', 'interface')
+        
+        def create(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'dhcp\':\n\n broadcast, ipaddr, hostname, clientid,, vendorid,dns, peerdns, defaultroute, customroutes, metric, classlessroute, reqopts, sendopts, zone, iface6rd, mtu6rd, zone6rd.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().create(name, proto='dhcp', **kwargs)
+
+        def update(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'dhcp\':\n\n broadcast, ipaddr, hostname, clientid,, vendorid,dns, peerdns, defaultroute, customroutes, metric, classlessroute, reqopts, sendopts, zone, iface6rd, mtu6rd, zone6rd.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().update(name, proto='dhcp', **kwargs)
+    
+    class __3g(_uci_command):
     def __init__(self):
         super().__init__('network', 'interface')
+
+        def create(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'3g\':\n\n device, service, apn, pincode, dialnumber, maxwait, username, password, keepalive, demand defaultroute, peerdns, dns, ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().create(name, proto='3g', **kwargs)
+
+        def update(self, name, **kwargs):
+            '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'3g\':\n\n device, service, apn, pincode, dialnumber, maxwait, username, password, keepalive, demand defaultroute, peerdns, dns, ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
+            super().update(name, proto='3g', **kwargs)
 
 class __firewall():
     def __init__(self):
@@ -88,10 +134,18 @@ class __firewall():
         self.rule = _uci_command('firewall', 'rule')
         self.forwarding = _uci_command('firewall', 'forwarding')
 
+
 class __dhcp(_uci_command):
     def __init__(self):
         super().__init__('dhcp', 'dhcp')
 
+    def create(self, name, **kwargs):
+        ''''''
+        super().create(name, **kwargs)
+
+    def update(self, name, **kwargs):
+        ''''''
+        super().update(name, **kwargs)
 
 wireless = __wireless()
 network = __network()
