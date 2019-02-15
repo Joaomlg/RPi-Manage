@@ -1,6 +1,6 @@
-from RPi.uci.uci_commands import __wireless, __network, __firewall, __dhcp
+from RPi.uci.uci_commands import wireless, network, firewall, dhcp
 
-wireless = __wireless()
-network  = __network()
-firewall = __firewall()
-dhcp     = __dhcp()
+wireless = wireless()
+network  = network()
+firewall = firewall()
+dhcp     = dhcp()

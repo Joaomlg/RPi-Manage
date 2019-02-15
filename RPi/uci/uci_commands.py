@@ -1,8 +1,8 @@
 from RPi.uci.base_crud_command import uci_base_command
 
-__all__ = ['__wireless', '__network', '__firewall', '__dhcp']
+__all__ = ['wireless', 'network', 'firewall', 'dhcp']
 
-class __wireless(uci_base_command):
+class wireless(uci_base_command):
     def __init__(self):
         super().__init__('wireless', 'wifi-iface')
 
@@ -14,7 +14,7 @@ class __wireless(uci_base_command):
         '''kwargs can be:\n\ndevice, mode, disabled, ssid, bssid, hidden, isolate, wmm, network, encryption, key, maclist, iapp_interface, rsn_preauth, maxassoc, macaddr, wds.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/wireless'''
         super().update(name, **kwargs)
 
-class __network(uci_base_command):
+class network(uci_base_command):
     def __init__(self):
         super().__init__('network', 'interface')
         self.static = self.__static()
@@ -57,7 +57,7 @@ class __network(uci_base_command):
             '''kwargs can be:\n\n - Valid for all protocol types:\n\n ifname, type, stp, bridge_empty, igmp_snooping, multicast_to_unicast, macaddr, mtu, auto, ipv6, accept_ra, send_rsforce_link, enabled, ip4table, ip6table.\n\n - Valid for protocol \'3g\':\n\n device, service, apn, pincode, dialnumber, maxwait, username, password, keepalive, demand defaultroute, peerdns, dns, ipv6.\n\n For more informations, access: https://oldwiki.archive.openwrt.org/doc/uci/network'''
             super().update(name, proto='3g', **kwargs)
 
-class __firewall(uci_base_command):
+class firewall(uci_base_command):
     def __init__(self):
         super().__init__('firewall', 'forwarding')
         self.defaults = self.__defaults()
@@ -89,7 +89,7 @@ class __firewall(uci_base_command):
         def __init__(self):
             super().__init__('firewall', 'forwarding')
 
-class __dhcp(uci_base_command):
+class dhcp(uci_base_command):
     def __init__(self):
         super().__init__('dhcp', 'dhcp')
     
