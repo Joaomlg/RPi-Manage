@@ -15,7 +15,7 @@ class Network:
     @staticmethod
     def __set_system():
         command = 'cat /etc/os-release | grep \'NAME\''
-        regex = r'NAME="([a-zA-Z\d]*)"'
+        regex = r'NAME="(.*)"'
         response = os.popen(command)
         try:
             system = re.search(regex, response.read())
