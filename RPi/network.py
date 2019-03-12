@@ -1,6 +1,8 @@
-import RPi.uci as uci
 import os
 import re
+import RPi.uci as uci
+
+import RPi.raspbian.network.dhcpcd, RPi.raspbian.network.wpa_supplicant, RPi.raspbian.network.dnsmasq, RPi.raspbian.network.hostapd
 
 class Network:
     def __init__(self):
@@ -70,31 +72,44 @@ class Network:
     def access_point(self, name, radio, encryption='none', network='wlan', firewall_zone='lan'):
         '''Function to create and start an access point'''
 
-        # Creating network if not exist
-        if 'wlan' not in uci.network.read_all():
-            uci.network.create('wlan', ifname='wlan0', proto='static', ipaddr='192.168.22.1', netmask='255.255.255.0', type='bridge')
+        if 'OpenWrt' in self.system:
+            # Creating network if not exist
+            if 'wlan' not in uci.network.read_all():
+                uci.network.create('wlan', ifname='wlan0', proto='static', ipaddr='192.168.22.1', netmask='255.255.255.0', type='bridge')
 
-        # Setting dhcp for network if not exist
-        if 'wlan' not in uci.dhcp.read_all():
-            uci.dhcp.create('wlan', interface='wlan', leasetime='12h', limit='150', start='100')
+            # Setting dhcp for network if not exist
+            if 'wlan' not in uci.dhcp.read_all():
+                uci.dhcp.create('wlan', interface='wlan', leasetime='12h', limit='150', start='100')
 
-        # Setting firewall if necessary
-        for zone in uci.firewall.zone.read_all():
-            info = uci.firewall.zone.read(zone)
-            if 'name' in info and info['name'] == firewall_zone:
-                netwrk = info['network']
-                if network not in netwrk:
-                    netwrk += ' ' + network
-                    uci.firewall.zone.update(zone, network=netwrk)
+            # Setting firewall if necessary
+            for zone in uci.firewall.zone.read_all():
+                info = uci.firewall.zone.read(zone)
+                if 'name' in info and info['name'] == firewall_zone:
+                    netwrk = info['network']
+                    if network not in netwrk:
+                        netwrk += ' ' + network
+                        uci.firewall.zone.update(zone, network=netwrk)
 
-        # Remove wireless from current radio
-        for wireless in uci.wireless.read_all():
-            info = uci.wireless.read(wireless)
-            if 'device' in info and info['device'] == radio:
-                uci.wireless.remove(wireless)
+            # Remove wireless from current radio
+            for wireless in uci.wireless.read_all():
+                info = uci.wireless.read(wireless)
+                if 'device' in info and info['device'] == radio:
+                    uci.wireless.remove(wireless)
 
-        # Create AccessPoint
-        uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
+            # Create AccessPoint
+            uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
+        
+        elif 'Raspbian' in self.system:
+            # Configuring a static IP
+            if not RPi.raspbian.network.dhcpcd.read_interface_by_name('wlan0'):
+                RPi.raspbian.network.dhcpcd.create_interface('wlan0', 'nohook wpa_supplicant', ip_address='192.168.22.1/24')
+            
+            # Configuring the DHCP server
+            if not RPi.raspbian.network.dnsmasq.read_by_name('wlan0'):
+                RPi.raspbian.network.dnsmasq.create('wlan0', '192.168.22.2', '192.168.22.20', '255.255.255.0', '24h')
+
+            # Configuring the access point host
+            RPi.raspbian.network.hostapd.create('wlan0', 'Newatt - Energia sob controle')
 
     def scan_wireless(self, interface):
         '''Function to scan wireless'''
@@ -159,7 +174,7 @@ class Network:
         
         return wireless
     
-    def connect_wireless(self, ssid, encryption, password, channel, radio='radio0', network='wwan', firewall_zone='lan'):
+    def connect_wireless(self, ssid, encryption='none', password='none', channel=6, radio='radio0', network='wwan', firewall_zone='lan'):
         '''Function to connect to a wireless.'''
 
         if self.system == 'OpenWrt':
@@ -188,6 +203,13 @@ class Network:
             
             # Create connection
             uci.wireless.create('cfg033579', ssid=ssid, device=radio, encryption=encryption, key=password, mode='sta', network=network)
+
+        elif 'Raspbian' in self.system:
+            # Removing static IP
+            RPi.raspbian.network.dhcpcd.delete_interface('wlan0')
+
+            # Creating connection config file
+            RPi.raspbian.network.wpa_supplicant.create(ssid, password)
 
         else:
             command = "nmcli d wifi connect '%s' password '%s'" % (ssid, password)
