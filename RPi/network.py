@@ -1,6 +1,7 @@
 import os
 import re
 import RPi.uci as uci
+import RPi.service as service
 
 import RPi.raspbian.network.dhcpcd, RPi.raspbian.network.wpa_supplicant, RPi.raspbian.network.dnsmasq, RPi.raspbian.network.hostapd
 
@@ -69,7 +70,7 @@ class Network:
         self.__interface = self.__set_interface()
         self.__mode = self.__set_mode()
 
-    def access_point(self, name, radio, encryption='none', network='wlan', firewall_zone='lan'):
+    def access_point(self, name, radio='radio0', encryption='none', network='wlan', firewall_zone='lan'):
         '''Function to create and start an access point'''
 
         if 'OpenWrt' in self.system:
@@ -100,6 +101,15 @@ class Network:
             uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
         
         elif 'Raspbian' in self.system:
+            # Unmask services if necessary
+            for service_name in ('hostapd', 'dnsmasq'):
+                if not service.is_loaded(service_name):
+                    service.unmask_service(service_name)
+
+            # Stop services
+            os.popen('sudo /etc/init.d/dnsmasq stop')
+            os.popen('sudo /etc/init.d/hostapd stop')
+
             # Configuring a static IP
             if not RPi.raspbian.network.dhcpcd.read_interface_by_name('wlan0'):
                 RPi.raspbian.network.dhcpcd.create_interface('wlan0', 'nohook wpa_supplicant', ip_address='192.168.22.1/24')
@@ -110,6 +120,10 @@ class Network:
 
             # Configuring the access point host
             RPi.raspbian.network.hostapd.create('wlan0', 'Newatt - Energia sob controle')
+
+            # Start services
+            os.popen('sudo /etc/init.d/dnsmasq start')
+            os.popen('sudo /etc/init.d/hostapd start')
 
     def scan_wireless(self, interface):
         '''Function to scan wireless'''
