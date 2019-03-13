@@ -2,10 +2,10 @@ import re
 
 def create(iface_name, dhcp_init, dhcp_end, subnet_mask, lease_time):
     with open('/etc/dnsmasq.conf', 'a') as file:
-        file.write('# Start interface ' + str(iface_name) + ' (required for RPi-Manage python\'s lib)\n')
-        file.write('\ninterface=' + str(iface_name) + '\n')
-        dhcp_range = '{init},{end},{mask},{time}h'.format(dhcp_init, dhcp_end, subnet_mask, lease_time)
-        file.write(dhcp_range + '\n')
+        file.write('\n# Start interface ' + str(iface_name) + ' (required for RPi-Manage python\'s lib)\n')
+        file.write('interface=' + str(iface_name) + '\n')
+        dhcp_range = '{},{},{},{}'.format(dhcp_init, dhcp_end, subnet_mask, lease_time)
+        file.write('dhcp-range=' + dhcp_range + '\n')
         file.write('# End interface\n')
 
 def read():
