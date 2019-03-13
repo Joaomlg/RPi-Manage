@@ -1,5 +1,7 @@
 import os
 import re
+from time import sleep
+
 import RPi.uci as uci
 import RPi.service as service
 
@@ -101,14 +103,14 @@ class Network:
             uci.wireless.create('cfg033579', device=radio, encryption=encryption, mode='ap', network=network, ssid=name)
         
         elif 'Raspbian' in self.system:
+            # Stop services
+            os.popen('sudo service dnsmasq stop')
+            os.popen('sudo service hostapd stop')
+
             # Unmask services if necessary
             for service_name in ('hostapd', 'dnsmasq'):
                 if not service.is_loaded(service_name):
                     service.unmask_service(service_name)
-
-            # Stop services
-            os.popen('sudo /etc/init.d/dnsmasq stop')
-            os.popen('sudo /etc/init.d/hostapd stop')
 
             # Configuring a static IP
             if not RPi.raspbian.network.dhcpcd.read_interface_by_name('wlan0'):
@@ -121,9 +123,14 @@ class Network:
             # Configuring the access point host
             RPi.raspbian.network.hostapd.create('wlan0', 'Newatt - Energia sob controle')
 
+            # Restart network service
+            os.popen('sudo service dhcpcd restart')
+
+            sleep(0.5)
+
             # Start services
-            os.popen('sudo /etc/init.d/dnsmasq start')
-            os.popen('sudo /etc/init.d/hostapd start')
+            os.popen('sudo service dnsmasq start')
+            os.popen('sudo service hostapd start')
 
     def scan_wireless(self, interface):
         '''Function to scan wireless'''
@@ -222,8 +229,16 @@ class Network:
             # Removing static IP
             RPi.raspbian.network.dhcpcd.delete_interface('wlan0')
 
+            # Stop access point's service
+            os.popen('sudo service hostapd stop')
+
             # Creating connection config file
             RPi.raspbian.network.wpa_supplicant.create(ssid, password)
+
+            sleep(1)
+
+            # Restart network service
+            os.popen('sudo service dhcpcd restart')
 
         else:
             command = "nmcli d wifi connect '%s' password '%s'" % (ssid, password)
