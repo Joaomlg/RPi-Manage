@@ -121,7 +121,7 @@ class Network:
                 RPi.raspbian.network.dnsmasq.create('wlan0', '192.168.22.2', '192.168.22.20', '255.255.255.0', '24h')
 
             # Configuring the access point host
-            RPi.raspbian.network.hostapd.create('wlan0', 'Newatt - Energia sob controle')
+            RPi.raspbian.network.hostapd.create('wlan0', 'AP')
 
             # Restart network service
             os.popen('sudo service dhcpcd restart')
